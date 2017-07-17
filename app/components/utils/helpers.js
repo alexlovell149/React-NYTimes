@@ -1,14 +1,56 @@
-// Include the axios package for performing HTTP requests (promise based alternative to request)
-var axios = require("axios");
 
-module.exports = {
-  // Returns a promise object we can .then() off inside our Parent component
-  getArticles: function() {
-    return axios.get("/scrape/:id");
-  },
-  // Also returns a promise object we can .then() off inside our Parent component
-  // This method takes in an argument for what to post to the database
-  postArticles: function(title, date, url) {
-    return axios.post("/scrape/:id", {title: title, date:date, url:url});
-  }
-};
+// Axios package for performing http requests
+var axios = require('axios');
+
+var APIKey = "b9f91d369ff59547cd47b931d8cbc56b:0:74623931";
+
+// Helper Functions
+var helpers = {
+
+	runQuery: function(topic, startYear, endYear){
+
+		//Figure out the geolocation
+		var queryURL = "https://api.nytimes.com/svc/search/v2/articlesearch.json?api-key=" + nytAPI + "&q=" + topic + "&begin_date=" + startYear + "0101&end_date=" + endYear + "0101";
+
+		return axios.get(queryURL)
+			.then(function(response){
+
+				var newResults = [];
+				var fullResults = response.data.response.docs;
+				var counter = 0;
+
+				//Gets first 5 articles that have all 3 components
+				for(var i = 0; i < fullResults.length; i++){
+
+					if(counter > 4) {
+						return newResults;
+					}
+
+					if(fullResults[counter].headline.main && fullResults[counter].pub_date && fullResults[counter].web_url) {
+						newResults.push(fullResults[counter]);
+						counter++;
+					}
+				}
+
+				return newResults;
+		})
+
+	},
+
+
+	// This function posts saved articles to our database.
+	postArticle: function(title, date, url){
+
+		axios.post('/api/saved', {title: title, date: date, url: url})
+		.then(function(results){
+
+			console.log("Posted to MongoDB");
+			return(results);
+		})
+	}
+
+}
+
+
+// We export the helpers function (which contains getGithubInfo)
+module.exports = helpers;

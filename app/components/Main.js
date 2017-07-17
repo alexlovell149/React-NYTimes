@@ -1,97 +1,130 @@
-var React = require("react");
+// This is the main app component that gets rendered in the beginning
+
+var axios = require('axios');
+
+// Include React 
+var React = require('react');
 
 // Here we include all of the sub-components
-var Results = require("./children/Results");
-var Saved = require("./children/Saved");
-var Search = require("./children/Search");
+var Form = require('./children/Search');
+var Results = require('./children/Results');
+var Saved = require('./children/Saved');
 
-// Helper for making AJAX requests to our API
-var helpers = require("./utils/helpers");
+// Helper Function
+var helpers = require('./utils/helpers.js');
 
-// Creating the Main component
+
+// This is the main component. 
 var Main = React.createClass({
 
 	// Here we set a generic state associated with the number of clicks
-  // Note how we added in this history state variable
-  getInitialState: function() {
-    return { searchTerm: "", results: "", history: [] };
-  },
+	getInitialState: function(){
+		return {
+			topic: "",
+			startYear: "",
+			endYear: "",
+			results: [],
+			savedArticles: []
+		}
+	},	
 
-  // The moment the page renders get the History
-  componentDidMount: function() {
-    // Get the latest history.
-    helpers.getArticles().then(function(response) {
-      console.log(response);
-      if (response !== this.state.history) {
-        console.log("History", response.data);
-        this.setState({ history: response.data });
-      }
-    }.bind(this));
-  },
+	// We use this function to allow children to update the parent with searchTerms.
+	setTerm: function(tpc, stYr, endYr){
+		this.setState({
+			topic: tpc,
+			startYear: stYr,
+			endYear: endYr
+		})
+	},
 
-  // If the component changes (i.e. if a search is entered)...
-  componentDidUpdate: function() {
+	saveArticle: function(title, date, url){
+		helpers.postArticle(title, date, url);
+		this.getArticle();
+	},
 
+	deleteArticle: function(article){
+		console.log(article);
+		axios.delete('/api/saved/' + article._id)
+			.then(function(response){
+				this.setState({
+					savedArticles: response.data
+				});
+				return response;
+			}.bind(this));
 
-        // After we've received the result... then post the search term to our history.
-        helpers.postArticles(this.state.searchTerm).then(function() {
-          console.log("Updated!");
+		this.getArticle();
+	},
 
-          // After we've done the post... then get the updated history
-          helpers.getArticles().then(function(response) {
-            console.log("Current History", response.data);
+	getArticle: function(){
+		axios.get('/api/saved')
+			.then(function(response){
+				this.setState({
+					savedArticles: response.data
+				});
+			}.bind(this));
+	},
 
-            console.log("History", response.data);
+	// If the component updates we'll run this code
+	componentDidUpdate: function(prevProps, prevState){
 
-            this.setState({ history: response.data });
+		if(prevState.topic != this.state.topic){
+			console.log("UPDATED");
 
-          }.bind(this));
-        }.bind(this));
-      },
+			helpers.runQuery(this.state.topic, this.state.startYear, this.state.endYear)
+				.then(function(data){
+					console.log(data);
+					if (data != this.state.results)
+					{
+						this.setState({
+							results: data
+						})
+					}
+				}.bind(this))
+		}
+	},
 
-  setTerm: function(term) {
-    this.setState({ searchTerm: term });
-  },
+	componentDidMount: function(){
+		axios.get('/api/saved')
+			.then(function(response){
+				this.setState({
+					savedArticles: response.data
+				});
+			}.bind(this));
+	},
 
-  render: function() {
-    return (
-      <div className="container">
-        <div className="row">
-          <div className="jumbotron">
-            <h2 className="text-center">Buzzfeed Article Scraper</h2>
-            <p className="text-center">
-              <em>Enter an article</em>
-            </p>
-          </div>
+	// Here we render the function
+	render: function(){
+		return(
 
-          <div className="col-md-6">
+			<div className="container">
 
-            <Search setTerm={this.setTerm} />
+				<div className="row">
 
-          </div>
+					<div className="jumbotron" style={{'backgroundImage': 'url(./public/news.jpg)', 'backgroundRepeat': 'no-repeat', 'backgroundPosition': 'center', 'backgroundSize': '100% 100%', 'backgroundAttachment': 'fixed'}}>
+						<h2 className="text-center" style={{'color': 'white', 'textShadow': '3px 3px 10px black', 'fontSize': '54px'}}>New York Times Article Search and Save</h2>
+						<p className="text-center" style={{'color': 'white', 'textShadow': '3px 3px 10px black', 'fontSize': '24px'}}>Search for and save articles of interest!</p>
+					</div>
+				</div>
+				<div className="row">
 
-          <div className="row">
+					<Form setTerm={this.setTerm}/>
 
-            <Results results={this.state.results} />
+				</div>
 
-          </div>
+				<div className="row">
+			
+					<Results results={this.state.results} saveArticle={this.saveArticle}/>
 
-        </div>
+				</div>
 
-        <div className="row">
+				<div className="row">
+				
+					<Saved savedArticles={this.state.savedArticles} deleteArticle={this.deleteArticle} />
 
-          <Saved history={this.state.history} />
-
-        </div>
-
-      </div>
-    );
-  }
+				</div>
+			</div>
+		)
+	}
 });
 
-// Export the component back for use in other files
 module.exports = Main;
-
-
-
-

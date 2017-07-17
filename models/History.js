@@ -3,14 +3,22 @@ require('mongoose-type-url');
 var Schema = mongoose.Schema;
 
 var HistorySchema = new Schema({
-  title: {
-    type: String,
-    uppercase: true
-  },
-  date: {
-    type: Date
-  },
-  urls: [{type: mongoose.SchemaTypes.Url}]
+    title: {
+        type: String,
+        uppercase: true,
+        required: true
+    },
+    date: {
+        type: Date,
+        trim: true,
+        default: Date.now,
+        required: true
+    },
+    urls: {
+        type: String,
+        required: true,
+        unique: true
+    }
 });
 
 
