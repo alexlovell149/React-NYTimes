@@ -45,15 +45,15 @@ app.get('/', function(req, res) {
 
 app.get('/api/saved', function(req, res) {
 
-    History.find({}, function(err, found) {
-        if (err) {
-            console.log(err);
-        } else {
-            res.json(found);
-        }
-    });
+    History.find({})
+        .exec(function(err, found) {
+            if (err) {
+                console.log(err);
+            } else {
+                res.send(found);
+            }
+        });
 });
-
 
 
 app.post('/api/saved', function(req, res) {
