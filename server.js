@@ -43,7 +43,7 @@ app.get('/', function(req, res) {
     res.sendFile('./public/index.html');
 });
 
-app.get('/api/all', function(req, res) {
+app.get('/api/saved', function(req, res) {
 
     History.find({}, function(err, found) {
         if (err) {
